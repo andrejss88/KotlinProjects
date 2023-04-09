@@ -1,10 +1,10 @@
 package encryption
 
 fun main() {
-    encrypt("we found a treasure!")
+    encryptStage1("we found a treasure!")
 }
 
-fun encrypt(input: String): String {
+fun encryptStage1(input: String): String {
     val map = ('a'..'z').zip(('z' downTo 'a')).toMap()
 
     val builder = StringBuilder()

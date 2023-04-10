@@ -4,38 +4,40 @@ import java.io.File
 
 fun main(args: Array<String>) {
 
-    val argMap = mutableMapOf<String, String>()
-    val pairList = args.toList().chunked(2)
-    for (list in pairList) {
-        argMap.put(list[0], list[1])
+    val arg = Arguments(args)
+
+    if (arg.inFile.isNotEmpty()) {
+        val content = File(arg.inFile).readText()
+        val result = executeAlgo(arg, content)
+        if(arg.outFile == arg.stdout) println(result) else File(arg.outFile).writeText(result)
+
+    } else {
+        val result = executeAlgo(arg, arg.data)
+        println(result)
+    }
+}
+
+fun executeAlgo(arg: Arguments, input: String) : String {
+    val algo = if (arg.algoChosen == ShiftAlgo.name) ShiftAlgo(arg.key) else UnicodeAlgo(arg.key)
+    return if (arg.mode == "enc") algo.encrypt(input) else algo.decrypt(input)
+}
+
+class Arguments(args: Array<String>) {
+    private val argMap = mutableMapOf<String, String>()
+    val stdout = "stdout"
+    init {
+        val pairList = args.toList().chunked(2)
+        for (list in pairList) {
+            argMap.put(list[0], list[1])
+        }
     }
 
-    val mode = argMap["-mode"] ?: "enc"
+    val mode  = argMap["-mode"] ?: "enc"
     val key = argMap["-key"]?.toInt() ?: 0
     val data = argMap["-data"] ?: ""
     val inFile = argMap["-in"] ?: ""
-    val outFile = argMap["-out"] ?: "stdout"
-    val algoChosen = argMap["-alg"] ?: "shift"
-
-    val algo = if (algoChosen == "shift") ShiftAlgo(key) else UnicodeAlgo(key)
-
-    // prioritize files
-    if (inFile.isNotEmpty()) {
-        val file = File(inFile)
-        val content = file.readText()
-        if (outFile == "stdout") {
-            val result = if(mode == "enc") algo.encrypt(content) else algo.decrypt(content)
-            println(result)
-        } else {
-            val result = if(mode == "enc") algo.encrypt(content) else algo.decrypt(content)
-            File(outFile).writeText(result)
-        }
-        return
-    }
-
-    // if no files - work with CLI input
-    val result = if(mode == "enc") algo.encrypt(data) else algo.decrypt(data)
-    println(result)
+    val outFile = argMap["-out"] ?: stdout
+    val algoChosen = argMap["-alg"] ?: ShiftAlgo.name
 }
 
 interface Algo {
@@ -44,6 +46,10 @@ interface Algo {
 }
 
 class ShiftAlgo(private val key: Int) : Algo {
+
+    companion object {
+        const val name = "shift"
+    }
 
     private val small = ('a'..'z')
     private val capital = ('A'..'Z')
@@ -61,7 +67,7 @@ class ShiftAlgo(private val key: Int) : Algo {
         return builder.toString()
     }
 
-    private fun encrypt(builder: StringBuilder, char: Char, lastLetter:Char) {
+    private fun encrypt(builder: StringBuilder, char: Char, lastLetter: Char) {
         when {
             char + key <= lastLetter -> builder.append(char + key)
             else -> {
@@ -83,7 +89,7 @@ class ShiftAlgo(private val key: Int) : Algo {
         return builder.toString()
     }
 
-    private fun decrypt(builder: StringBuilder, char: Char, firstLetter:Char) {
+    private fun decrypt(builder: StringBuilder, char: Char, firstLetter: Char) {
         when {
             char - key >= firstLetter -> builder.append(char - key)
             else -> {
@@ -95,6 +101,10 @@ class ShiftAlgo(private val key: Int) : Algo {
 }
 
 class UnicodeAlgo(private val key: Int) : Algo {
+
+    companion object {
+        const val name = "unicode"
+    }
 
     override fun encrypt(input: String): String {
         val builder = StringBuilder()

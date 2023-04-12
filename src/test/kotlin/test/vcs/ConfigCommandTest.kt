@@ -6,6 +6,7 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInstance
 import vcs.Config
+import vcs.createFile
 import java.io.File
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
@@ -28,7 +29,7 @@ class ConfigCommandTest {
     }
 
     private fun config(vararg args: String): Config {
-        return Config(args.asList(), testDir, testFile)
+        return Config(args.asList(), createFile(testDir, testFile))
     }
 
     @Test
